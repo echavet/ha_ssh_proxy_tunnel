@@ -69,11 +69,11 @@ iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
 # Prioriser l'usage de la clé
 if [ -f /data/ssh_keys/id_tunnel ]; then
     bashio::log.info "Lancement du tunnel SSH avec authentification par clé RSA..."
-    exec ssh -fND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" -i /data/ssh_keys/id_tunnel ${SSH_OPTIONS}
+    exec ssh -ND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" -i /data/ssh_keys/id_tunnel ${SSH_OPTIONS}
 elif bashio::config.has_value 'ssh_password'; then
     SSHPASS="sshpass -p '$(bashio::config 'ssh_password')'"
     bashio::log.info "Lancement du tunnel SSH avec authentification par mot de passe..."
-    exec ${SSHPASS} ssh -fND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
+    exec ${SSHPASS} ssh -ND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
 else
     bashio::log.fatal "Aucune méthode d'authentification disponible."
     exit 1
