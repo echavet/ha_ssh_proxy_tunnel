@@ -7,7 +7,7 @@ ssh_target=$(bashio::config 'ssh_target')
 ssh_port=$(bashio::config 'ssh_port')
 ssh_password=$(bashio::config 'ssh_password')
 tunnel_listen_address=$(bashio::config 'tunnel_listen_address')
-tunnel_listen_port=$(bashio::addon.port 3001)
+tunnel_listen_port=$(bashio::addon.port 80)
 
 key_algo=$(bashio::config 'key_algo')
 key_length=$(bashio::config 'key_length')
