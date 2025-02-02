@@ -17,8 +17,11 @@ arch:
   
 privileged:
   - NET_ADMIN
+  - SYS_ADMIN
+  - SYS_RAWIO
+  - SYS_TIME
+  - SYS_NICE
   
-
 options:
   allowed_ips:
     description: "Liste des IP autorisées (séparées par des virgules)"
