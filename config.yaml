@@ -21,8 +21,16 @@ privileged:
   #- SYS_RAWIO
   #- SYS_TIME
   #- SYS_NICE
+  
 map:
   - ssh_keys:rw
+  - addons:rw
+  - all_addon_configs:rw
+  - backup:rw
+  - homeassistant_config:rw
+  - media:rw
+  - share:rw
+  - ssl:rw
   
 options:
   allowed_ips: "127.0.0.1"
