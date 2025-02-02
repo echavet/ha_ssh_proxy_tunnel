@@ -2,6 +2,10 @@
 # run.sh
 set -e
 
+echo "Port du tunnel utilisé: ${CONFIG_TUNNEL_LISTEN_PORT}"
+echo "Tunnel listen address: ${CONFIG_TUNNEL_LISTEN_ADDRESS}"
+echo "IPs autorisées : ${CONFIG_ALLOWED_IPS}"
+
 # Appliquer les règles iptables pour limiter l'accès au tunnel
 iptables -F
 iptables -A INPUT -s 127.0.0.1 -j ACCEPT
