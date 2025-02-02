@@ -2,7 +2,7 @@
 name: "ha ssh proxy tunnel"
 slug: "ha_ssh_proxy_tunnel"
 description: "Addon permettant d'ouvrir un tunnel SSH avec proxy SOCKS, de limiter l'accès par IP et de gérer l'authentification par mot de passe ou clé RSA."
-version: "2025.0.9-alpha"
+version: "2025.0.10-alpha"
 maintainer: "echavet@gmail.com"
 url: "https://github.com/echavet/ha_ssh_proxy_tunnel"
 
@@ -17,10 +17,10 @@ arch:
   
 privileged:
   - NET_ADMIN
-  - SYS_ADMIN
-  - SYS_RAWIO
-  - SYS_TIME
-  - SYS_NICE
+  #- SYS_ADMIN
+  #- SYS_RAWIO
+  #- SYS_TIME
+  #- SYS_NICE
   
 options:
   allowed_ips:
@@ -34,22 +34,26 @@ options:
     default: 22
   ssh_password:
     description: "Mot de passe SSH (laisser vide si utilisation d'une clé RSA)"
-    default: ""
-  authorized_keys:
-    description: "Contenu complet de la clé RSA (clé privée) à utiliser pour l'authentification"
-    default: []
+    default: "secret"  
   tunnel_listen_address:
     description: "Adresse d'écoute du tunnel"
     default: "192.168.1.x"
   tunnel_listen_port:
     description: "Port d'écoute du tunnel"
     default: 3000
+  key_algo:
+    description: "Algorithme pour la génération de la clé (dsa | ecdsa | ecdsa-sk | ed25519 | ed25519-sk | rsa)"
+    default: "rsa"
+  key_length:
+    description: "Longueur de la clé (applicable pour rsa, dsa, ecdsa)"
+    default: 3072
 
 schema:
   allowed_ips: str
   ssh_target: str
   ssh_port: int
   ssh_password: password
-  authorized_key: str
+  key_algo: str
+  key_length: int
   tunnel_listen_address: str
   tunnel_listen_port: int
