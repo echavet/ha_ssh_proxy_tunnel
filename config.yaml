@@ -7,6 +7,8 @@ maintainer: "echavet@gmail.com"
 url: "https://github.com/echavet/ha_ssh_proxy_tunnel"
 
 init: false
+privileged: true
+
 arch:
   - aarch64
   - amd64
