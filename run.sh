@@ -1,36 +1,44 @@
 #!/command/with-contenv bashio
 set -e
 
-# Récupérer la configuration via bashio
+# Récupération de la configuration via bashio
 allowed_ips=$(bashio::config 'allowed_ips')
 ssh_target=$(bashio::config 'ssh_target')
 ssh_port=$(bashio::config 'ssh_port')
 ssh_password=$(bashio::config 'ssh_password')
 tunnel_listen_address=$(bashio::config 'tunnel_listen_address')
-# Récupération du port via la section ports du config.yaml (ex. 80/tcp)
+# Récupération du port via la section ports du config.yaml (par exemple, 80/tcp: 3001)
 tunnel_listen_port=$(bashio::addon.port "80/tcp")
 key_algo=$(bashio::config 'key_algo')
 key_length=$(bashio::config 'key_length')
 key_passphrase=$(bashio::config 'key_passphrase')
 
+# Affichage de la configuration dans les logs pour vérification
 bashio::log.info "Configuration chargée :"
-bashio::log.info "  allowed_ips=${allowed_ips}"
-bashio::log.info "  ssh_target=${ssh_target}"
-bashio::log.info "  ssh_port=${ssh_port}"
-bashio::log.info "  tunnel_listen_address=${tunnel_listen_address}"
-bashio::log.info "  tunnel_listen_port=${tunnel_listen_port}"
-bashio::log.info "  key_algo=${key_algo}, key_length=${key_length}"
+bashio::log.info "  allowed_ips           = ${allowed_ips}"
+bashio::log.info "  ssh_target            = ${ssh_target}"
+bashio::log.info "  ssh_port              = ${ssh_port}"
+bashio::log.info "  tunnel_listen_address = ${tunnel_listen_address}"
+bashio::log.info "  tunnel_listen_port    = ${tunnel_listen_port}"
+bashio::log.info "  key_algo              = ${key_algo}"
+bashio::log.info "  key_length            = ${key_length}"
 
-# Préparer le dossier persistant pour la clé
+###############################################################################
+# Préparation de la clé SSH
+###############################################################################
+
+# On utilise /data/ssh_keys pour stocker la clé de manière persistante (ce dossier doit être mappé en volume)
 mkdir -p /data/ssh_keys
 
-# Générer la clé SSH (fichier /data/ssh_keys/id_tunnel) si elle n'existe pas
+# Si la clé n'existe pas, on la génère avec les paramètres configurés
 if [ ! -f /data/ssh_keys/id_tunnel ]; then
     bashio::log.notice "Clé SSH introuvée, génération d'une nouvelle paire..."
+    # Pour rsa, dsa, ou ecdsa, on ajoute l'option -b pour spécifier la longueur
     case "$key_algo" in
       rsa|dsa|ecdsa)
           keygen_options="-b ${key_length}"
           ;;
+      # Pour ed25519 et ses variantes, la longueur est fixe
       ed25519|ed25519-sk|ecdsa-sk)
           keygen_options=""
           ;;
@@ -49,33 +57,54 @@ fi
 if [ -n "${key_passphrase}" ]; then
     bashio::log.info "Déverrouillage de la clé avec ssh-agent..."
     eval "$(ssh-agent -s)"
+    # Création d'un script temporaire pour fournir automatiquement la passphrase via SSH_ASKPASS
     cat <<EOF >/tmp/askpass.sh
 #!/bin/bash
 echo "${key_passphrase}"
 EOF
     chmod +x /tmp/askpass.sh
     export SSH_ASKPASS=/tmp/askpass.sh
+    # SSH_ASKPASS nécessite la variable DISPLAY ; ici on la définit à :0
     export DISPLAY=:0
+    # Ajout de la clé dans l'agent
     ssh-add /data/ssh_keys/id_tunnel || bashio::log.fatal "Échec de l'ajout de la clé dans ssh-agent"
 fi
 
-# Options SSH pour diagnostiquer les connexions
-# -o ExitOnForwardFailure=yes: quitte si l'établissement du tunnel échoue
-# -o StrictHostKeyChecking=no et -o UserKnownHostsFile=/dev/null: désactive la vérification d'hôte
-# -vvv: active le mode verbeux pour tracer la connexion
+###############################################################################
+# Définition des options SSH pour diagnostiquer les connexions
+###############################################################################
+
+# SSH_OPTIONS contient :
+# - ExitOnForwardFailure=yes : quitte si le tunnel ne peut être établi
+# - StrictHostKeyChecking=no et UserKnownHostsFile=/dev/null : désactivation de la vérification d'hôte (utile dans un environnement automatisé)
+# - -vvv : mode verbeux pour obtenir des détails sur la connexion (diagnostic)
 SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -vvv"
 
-# Appliquer les règles iptables pour limiter l'accès au tunnel
-iptables -F
-iptables -A INPUT -s 127.0.0.1 -j ACCEPT
-iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+###############################################################################
+# Application des règles iptables pour limiter l'accès au tunnel
+###############################################################################
+
+# Ces commandes configurent le firewall du container pour n'autoriser que les IP définies dans allowed_ips
+# Attention : Dans un container Docker, l'environnement réseau est isolé.
+# Ici, on part du principe que les IP source des connexions autorisées sont celles qui parviennent au container.
+iptables -F  # Réinitialise toutes les règles
+iptables -A INPUT -s 127.0.0.1 -j ACCEPT  # Autorise les connexions locales
+iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
+# Pour chaque IP autorisée dans la variable allowed_ips (séparées par des virgules)
 IFS=',' read -ra IPS <<< "${allowed_ips}"
 for ip in "${IPS[@]}"; do
     iptables -A INPUT -s "${ip}" -j ACCEPT
 done
+# Bloque l'accès au port du tunnel pour toute autre IP
 iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
 
-# Prioriser l'usage de la clé
+###############################################################################
+# Lancement du tunnel SSH en mode premier plan pour que s6 supervise le processus
+###############################################################################
+
+# Remarque sur l'usage de tunnel_listen_address : 
+# Dans un container HA, l'adresse IP d'écoute doit correspondre à celle sur laquelle le container accepte les connexions.
+# Dans notre exemple, on utilise tunnel_listen_address tel que défini dans la configuration (souvent 0.0.0.0 ou une IP spécifique assignée au container).
 if [ -f /data/ssh_keys/id_tunnel ]; then
     bashio::log.info "Lancement du tunnel SSH avec authentification par clé RSA..."
     exec ssh -ND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" -i /data/ssh_keys/id_tunnel ${SSH_OPTIONS}
