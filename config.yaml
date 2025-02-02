@@ -1,0 +1,32 @@
+# config.yaml
+options:
+  allowed_ips:
+    description: "Liste des IP autorisées (séparées par des virgules)"
+    default: "127.0.0.1"
+  ssh_target:
+    description: "Destination SSH (format user@host)"
+    default: "user@mydomain.com"
+  ssh_port:
+    description: "Port SSH de la destination"
+    default: 22
+  ssh_password:
+    description: "Mot de passe SSH (laisser vide si utilisation d'une clé RSA)"
+    default: ""
+  authorized_keys:
+    description: "Contenu complet de la clé RSA (clé privée) à utiliser pour l'authentification"
+    default: []
+  tunnel_listen_address:
+    description: "Adresse d'écoute du tunnel"
+    default: "192.168.1.x"
+  tunnel_listen_port:
+    description: "Port d'écoute du tunnel"
+    default: 3000
+
+schema:
+  allowed_ips: string
+  ssh_target: string
+  ssh_port: int
+  ssh_password: string
+  authorized_keys: list
+  tunnel_listen_address: string
+  tunnel_listen_port: int
