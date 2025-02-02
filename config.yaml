@@ -47,7 +47,6 @@ schema:
   ssh_target: str
   ssh_port: int
   ssh_password: password
-  authorized_keys: 
-    - str
+  authorized_key: str
   tunnel_listen_address: str
   tunnel_listen_port: int
