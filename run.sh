@@ -117,7 +117,7 @@ for ip in "${IPS[@]}"; do
     iptables -A INPUT -s "${ip}" -j ACCEPT
 done
 # Bloque l'accès au port du tunnel pour toute autre IP
-iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
+iptables -A INPUT -p tcp --dport 80 -j DROP
 
 ###############################################################################
 # Lancement du tunnel SSH en mode premier plan pour que s6 supervise le processus
