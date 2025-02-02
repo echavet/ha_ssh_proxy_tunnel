@@ -1,34 +1,29 @@
-
----
-
-**README.md**
-
-```markdown
 # ha ssh proxy tunnel
 
-Addon pour Home Assistant permettant d'ouvrir un tunnel SSH dynamique (proxy SOCKS) avec filtrage d'accès par IP et authentification flexible (clé RSA ou mot de passe).
+An add-on for Home Assistant that creates a dynamic SSH tunnel (SOCKS proxy) with IP-based access filtering and flexible authentication (RSA key or password).
 
-## Caractéristiques
+## Features
 
-- **Tunnel SSH dynamique :** redirige le trafic via SSH en mode proxy SOCKS.
-- **Filtrage par IP :** seuls les clients dont l'IP figure dans `allowed_ips` peuvent accéder au tunnel.
-- **Authentification flexible :** possibilité d'utiliser une clé RSA (générée automatiquement si nécessaire) ou un mot de passe.
-- **Option Debug :** active des logs détaillés pour faciliter le diagnostic.
-- **Mapping de port :** le tunnel écoute sur le port interne 80, qui est mappé vers le port configuré (par défaut 3001) sur l'hôte.
+- **Dynamic SSH Tunnel:** Redirects traffic via an SSH tunnel operating as a SOCKS proxy.
+- **IP Filtering:** Only clients with IP addresses listed in `allowed_ips` can access the tunnel.
+- **Flexible Authentication:** Supports RSA key authentication (automatically generated if needed) or a password.
+- **Automatic Key Generation:** If no key exists at `/data/ssh_keys/id_tunnel`, a new RSA key pair is generated using the configured parameters. The public key is output in the logs so you can add it to the remote server.
+- **Debug Mode:** When enabled, detailed SSH logs (`-vvv`) are provided to aid troubleshooting.
+- **Port Mapping:** The SSH tunnel listens on port **80** inside the container, which is mapped to an external port (default is 3001) as configured in the add-on settings.
 
 ## Installation
 
-1. Ajoutez le dépôt GitHub de l'addon à Home Assistant :  
+1. Add the add-on repository to Home Assistant:  
    [https://github.com/echavet/ha_ssh_proxy_tunnel](https://github.com/echavet/ha_ssh_proxy_tunnel)
-2. Installez l'addon et configurez-le via le fichier **config.yaml**.
-3. Redémarrez l'addon.
+2. Install the add-on and configure it via **config.yaml**.
+3. Restart the add-on.
 
-## Exemple de configuration (config.yaml)
+## Sample Configuration (config.yaml)
 
 ```yaml
 name: "ha ssh proxy tunnel"
 slug: "ha_ssh_proxy_tunnel"
-description: "Addon permettant d'ouvrir un tunnel SSH avec proxy SOCKS, de limiter l'accès par IP et de gérer l'authentification par mot de passe ou clé RSA."
+description: "Add-on to create an SSH tunnel with a SOCKS proxy, IP filtering, and flexible authentication (password or RSA key)."
 version: "2025.2.2-beta-1.2"
 maintainer: "echavet@gmail.com"
 url: "https://github.com/echavet/ha_ssh_proxy_tunnel"
@@ -54,7 +49,7 @@ map:
 ports:
   80/tcp: 3001
 ports_description:
-  80/tcp: Tunnel Listen Port
+  80/tcp: "Tunnel Listen Port"
   
 options:
   allowed_ips: "127.0.0.1"
@@ -77,3 +72,4 @@ schema:
   key_passphrase: password?
   tunnel_listen_address: str
   debug: bool
+
