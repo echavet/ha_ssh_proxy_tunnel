@@ -47,6 +47,9 @@ options:
   key_length:
     description: "Longueur de la clé (applicable pour rsa, dsa, ecdsa)"
     default: 3072
+  key_passphrase:
+    description: "Passphrase pour protéger la clé SSH générée (laisser vide pour aucune passphrase)"
+    default: "ha_ssh_proxy_tunnel"
 
 schema:
   allowed_ips: str
@@ -55,5 +58,6 @@ schema:
   ssh_password: password
   key_algo: str
   key_length: int
+  key_passphrase: password
   tunnel_listen_address: str
   tunnel_listen_port: int
