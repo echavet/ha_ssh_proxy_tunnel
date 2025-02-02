@@ -2,6 +2,7 @@
 set -e
 
 # Récupération de la configuration via bashio
+debug=$(bashio::config 'debug')
 allowed_ips=$(bashio::config 'allowed_ips')
 ssh_target=$(bashio::config 'ssh_target')
 ssh_port=$(bashio::config 'ssh_port')
@@ -80,11 +81,23 @@ fi
 # Définition des options SSH pour diagnostiquer les connexions
 ###############################################################################
 
+# Définir la variable verbose selon debug
+if bashio::config.true 'debug'; then
+    verbose="-vvv"
+else
+    verbose=""
+fi
+
 # SSH_OPTIONS contient :
 # - ExitOnForwardFailure=yes : quitte si le tunnel ne peut être établi
 # - StrictHostKeyChecking=no et UserKnownHostsFile=/dev/null : désactivation de la vérification d'hôte (utile dans un environnement automatisé)
 # - -vvv : mode verbeux pour obtenir des détails sur la connexion (diagnostic)
-SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -vvv"
+
+# Définir les options SSH de base
+SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${verbose}"
+
+bashio::log.info "SSH_OPTIONS: ${SSH_OPTIONS}"
+
 
 ###############################################################################
 # Application des règles iptables pour limiter l'accès au tunnel
