@@ -13,6 +13,12 @@ key_algo=$(bashio::config 'key_algo')
 key_length=$(bashio::config 'key_length')
 key_passphrase=$(bashio::config 'key_passphrase')
 
+
+bashio::log.info "Tunnel SSH: destination ${ssh_target}:${ssh_port}"
+bashio::log.info "Tunnel écoute sur ${tunnel_listen_address}:80, mappé en externe sur le port ${tunnel_listen_port}"
+
+
+
 # Affichage de la configuration dans les logs pour vérification
 bashio::log.info "Configuration chargée :"
 bashio::log.info "  allowed_ips           = ${allowed_ips}"
@@ -109,11 +115,11 @@ SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnow
 # Dans notre exemple, on utilise tunnel_listen_address tel que défini dans la configuration (souvent 0.0.0.0 ou une IP spécifique assignée au container).
 if [ -f /data/ssh_keys/id_tunnel ]; then
     bashio::log.info "Lancement du tunnel SSH avec authentification par clé RSA..."
-    exec ssh -ND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" -i /data/ssh_keys/id_tunnel ${SSH_OPTIONS}
+    exec ssh -ND "${tunnel_listen_address}:80" "${ssh_target}" -p "${ssh_port}" -i /data/ssh_keys/id_tunnel ${SSH_OPTIONS}
 elif bashio::config.has_value 'ssh_password'; then
     SSHPASS="sshpass -p '$(bashio::config 'ssh_password')'"
     bashio::log.info "Lancement du tunnel SSH avec authentification par mot de passe..."
-    exec ${SSHPASS} ssh -ND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
+    exec ${SSHPASS} ssh -ND "${tunnel_listen_address}:80" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
 else
     bashio::log.fatal "Aucune méthode d'authentification disponible."
     exit 1
