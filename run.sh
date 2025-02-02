@@ -87,16 +87,18 @@ SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnow
 # Ces commandes configurent le firewall du container pour n'autoriser que les IP définies dans allowed_ips
 # Attention : Dans un container Docker, l'environnement réseau est isolé.
 # Ici, on part du principe que les IP source des connexions autorisées sont celles qui parviennent au container.
-iptables -F  # Réinitialise toutes les règles
-iptables -A INPUT -s 127.0.0.1 -j ACCEPT  # Autorise les connexions locales
-iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
+
+#iptables -F  # Réinitialise toutes les règles
+#iptables -A INPUT -s 127.0.0.1 -j ACCEPT  # Autorise les connexions locales
+#iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
+
 # Pour chaque IP autorisée dans la variable allowed_ips (séparées par des virgules)
-IFS=',' read -ra IPS <<< "${allowed_ips}"
-for ip in "${IPS[@]}"; do
-    iptables -A INPUT -s "${ip}" -j ACCEPT
-done
+#IFS=',' read -ra IPS <<< "${allowed_ips}"
+#for ip in "${IPS[@]}"; do
+#    iptables -A INPUT -s "${ip}" -j ACCEPT
+#done
 # Bloque l'accès au port du tunnel pour toute autre IP
-iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
+#iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
 
 ###############################################################################
 # Lancement du tunnel SSH en mode premier plan pour que s6 supervise le processus
