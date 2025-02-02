@@ -1,25 +1,30 @@
 #!/command/with-contenv bashio
 set -e
 
-# Récupération de la configuration (identique)
+# Récupérer la configuration via bashio
 allowed_ips=$(bashio::config 'allowed_ips')
 ssh_target=$(bashio::config 'ssh_target')
 ssh_port=$(bashio::config 'ssh_port')
 ssh_password=$(bashio::config 'ssh_password')
 tunnel_listen_address=$(bashio::config 'tunnel_listen_address')
-tunnel_listen_port=$(bashio::addon.port 80/tcp)
-
+# Récupération du port via la section ports du config.yaml (ex. 80/tcp)
+tunnel_listen_port=$(bashio::addon.port "80/tcp")
 key_algo=$(bashio::config 'key_algo')
 key_length=$(bashio::config 'key_length')
 key_passphrase=$(bashio::config 'key_passphrase')
 
-bashio::log.info "Configuration chargée : allowed_ips=${allowed_ips}, ssh_target=${ssh_target}, ssh_port=${ssh_port}, tunnel_listen_address=${tunnel_listen_address}, tunnel_listen_port=${tunnel_listen_port}"
-bashio::log.info "Algorithme de clé : ${key_algo}, longueur : ${key_length}"
+bashio::log.info "Configuration chargée :"
+bashio::log.info "  allowed_ips=${allowed_ips}"
+bashio::log.info "  ssh_target=${ssh_target}"
+bashio::log.info "  ssh_port=${ssh_port}"
+bashio::log.info "  tunnel_listen_address=${tunnel_listen_address}"
+bashio::log.info "  tunnel_listen_port=${tunnel_listen_port}"
+bashio::log.info "  key_algo=${key_algo}, key_length=${key_length}"
 
 # Préparer le dossier persistant pour la clé
 mkdir -p /data/ssh_keys
 
-# Génération de la clé SSH (fichier /data/ssh_keys/id_tunnel) si elle n'existe pas
+# Générer la clé SSH (fichier /data/ssh_keys/id_tunnel) si elle n'existe pas
 if [ ! -f /data/ssh_keys/id_tunnel ]; then
     bashio::log.notice "Clé SSH introuvée, génération d'une nouvelle paire..."
     case "$key_algo" in
@@ -54,10 +59,13 @@ EOF
     ssh-add /data/ssh_keys/id_tunnel || bashio::log.fatal "Échec de l'ajout de la clé dans ssh-agent"
 fi
 
-# Options SSH (explication ci-dessous)
-SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+# Options SSH pour diagnostiquer les connexions
+# -o ExitOnForwardFailure=yes: quitte si l'établissement du tunnel échoue
+# -o StrictHostKeyChecking=no et -o UserKnownHostsFile=/dev/null: désactive la vérification d'hôte
+# -vvv: active le mode verbeux pour tracer la connexion
+SSH_OPTIONS="-o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -vvv"
 
-# Appliquer les règles iptables
+# Appliquer les règles iptables pour limiter l'accès au tunnel
 iptables -F
 iptables -A INPUT -s 127.0.0.1 -j ACCEPT
 iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
