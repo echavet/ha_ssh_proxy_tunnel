@@ -1,14 +1,13 @@
 #!/command/with-contenv bashio
 set -e
 
-# Récupération des options via bashio
-allowed_ips=$(bashio::config.get "allowed_ips")
-ssh_target=$(bashio::config.get "ssh_target")
-ssh_port=$(bashio::config.get "ssh_port")
-ssh_password=$(bashio::config.get "ssh_password")
-authorized_keys=$(bashio::config.get "authorized_keys")
-tunnel_listen_address=$(bashio::config.get "tunnel_listen_address")
-tunnel_listen_port=$(bashio::config.get "tunnel_listen_port")
+allowed_ips=$(bashio::config 'allowed_ips')
+ssh_target=$(bashio::config 'ssh_target')
+ssh_port=$(bashio::config 'ssh_port')
+ssh_password=$(bashio::config 'ssh_password')
+authorized_keys=$(bashio::config 'authorized_keys')
+tunnel_listen_address=$(bashio::config 'tunnel_listen_address')
+tunnel_listen_port=$(bashio::config 'tunnel_listen_port')
 
 bashio::log.info "Configuration chargée : allowed_ips=${allowed_ips}, ssh_target=${ssh_target}, ssh_port=${ssh_port}, tunnel_listen_address=${tunnel_listen_address}, tunnel_listen_port=${tunnel_listen_port}"
 
@@ -25,7 +24,6 @@ iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
 
 SSH_OPTIONS="-o ExitOnForwardFailure=yes"
 
-# Authentification par clé RSA si fournie
 if bashio::var.has_value "${authorized_keys}" && [ "${authorized_keys}" != "[]" ]; then
     mkdir -p /root/.ssh
     echo "${authorized_keys}" > /root/.ssh/id_rsa
@@ -38,7 +36,6 @@ else
     exit 1
 fi
 
-# Lancer le tunnel SSH
 if bashio::var.has_value "${ssh_password}" && ! bashio::var.has_value "${authorized_keys}"; then
     exec ${SSHPASS} ssh -fND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
 else
