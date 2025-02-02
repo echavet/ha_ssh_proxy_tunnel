@@ -1,42 +1,46 @@
-#!/bin/bash
-# run.sh
+#!/command/with-contenv bashio
 set -e
 
-echo "Port du tunnel utilisé: ${CONFIG_TUNNEL_LISTEN_PORT}"
-echo "Tunnel listen address: ${CONFIG_TUNNEL_LISTEN_ADDRESS}"
-echo "IPs autorisées : ${CONFIG_ALLOWED_IPS}"
+# Récupération des options via bashio
+allowed_ips=$(bashio::config.get "allowed_ips")
+ssh_target=$(bashio::config.get "ssh_target")
+ssh_port=$(bashio::config.get "ssh_port")
+ssh_password=$(bashio::config.get "ssh_password")
+authorized_keys=$(bashio::config.get "authorized_keys")
+tunnel_listen_address=$(bashio::config.get "tunnel_listen_address")
+tunnel_listen_port=$(bashio::config.get "tunnel_listen_port")
 
-# Appliquer les règles iptables pour limiter l'accès au tunnel
+bashio::log.info "Configuration chargée : allowed_ips=${allowed_ips}, ssh_target=${ssh_target}, ssh_port=${ssh_port}, tunnel_listen_address=${tunnel_listen_address}, tunnel_listen_port=${tunnel_listen_port}"
+
+# Appliquer les règles iptables
 iptables -F
 iptables -A INPUT -s 127.0.0.1 -j ACCEPT
 iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
-IFS=',' read -ra IPS <<< "${CONFIG_ALLOWED_IPS}"
+IFS=',' read -ra IPS <<< "${allowed_ips}"
 for ip in "${IPS[@]}"; do
     iptables -A INPUT -s "$ip" -j ACCEPT
 done
-iptables -A INPUT -p tcp --dport "${CONFIG_TUNNEL_LISTEN_PORT}" -j DROP
+iptables -A INPUT -p tcp --dport "${tunnel_listen_port}" -j DROP
 
-# Options SSH de base
 SSH_OPTIONS="-o ExitOnForwardFailure=yes"
 
 # Authentification par clé RSA si fournie
-if [ "${CONFIG_AUTHORIZED_KEYS}" != "[]" ] && [ -n "${CONFIG_AUTHORIZED_KEYS}" ]; then
+if bashio::var.has_value "${authorized_keys}" && [ "${authorized_keys}" != "[]" ]; then
     mkdir -p /root/.ssh
-    echo "${CONFIG_AUTHORIZED_KEYS}" > /root/.ssh/id_rsa
+    echo "${authorized_keys}" > /root/.ssh/id_rsa
     chmod 600 /root/.ssh/id_rsa
     SSH_OPTIONS="${SSH_OPTIONS} -i /root/.ssh/id_rsa"
-elif [ -n "${CONFIG_SSH_PASSWORD}" ]; then
-    # Préparer sshpass pour le mot de passe
-    SSHPASS="sshpass -p '${CONFIG_SSH_PASSWORD}'"
+elif bashio::var.has_value "${ssh_password}"; then
+    SSHPASS="sshpass -p '${ssh_password}'"
 else
-    echo "Erreur : fournir un mot de passe SSH ou une clé RSA."
+    bashio::log.error "Aucune méthode d'authentification fournie (clé RSA ou mot de passe)."
     exit 1
 fi
 
-# Lancer le tunnel SSH en utilisant sshpass si le mot de passe est renseigné
-if [ -n "${CONFIG_SSH_PASSWORD}" ] && { [ "${CONFIG_AUTHORIZED_KEYS}" == "[]" ] || [ -z "${CONFIG_AUTHORIZED_KEYS}" ]; }; then
-    exec ${SSHPASS} ssh -fND "${CONFIG_TUNNEL_LISTEN_ADDRESS}:${CONFIG_TUNNEL_LISTEN_PORT}" "${CONFIG_SSH_TARGET}" -p "${CONFIG_SSH_PORT}" ${SSH_OPTIONS}
+# Lancer le tunnel SSH
+if bashio::var.has_value "${ssh_password}" && ! bashio::var.has_value "${authorized_keys}"; then
+    exec ${SSHPASS} ssh -fND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
 else
-    exec ssh -fND "${CONFIG_TUNNEL_LISTEN_ADDRESS}:${CONFIG_TUNNEL_LISTEN_PORT}" "${CONFIG_SSH_TARGET}" -p "${CONFIG_SSH_PORT}" ${SSH_OPTIONS}
+    exec ssh -fND "${tunnel_listen_address}:${tunnel_listen_port}" "${ssh_target}" -p "${ssh_port}" ${SSH_OPTIONS}
 fi
