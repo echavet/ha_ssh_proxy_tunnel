@@ -1,50 +1,50 @@
 # Documentation – ha ssh proxy tunnel
 
 ## Description
-L'addon **ha ssh proxy tunnel** permet d'ouvrir un tunnel SSH dynamique (proxy SOCKS) pour rediriger le trafic, avec filtrage d'accès par adresses IP et authentification flexible (clé RSA ou mot de passe). Il génère automatiquement une paire de clés SSH si aucune n'est présente, et propose une option de débogage pour obtenir des logs détaillés.
+The **ha ssh proxy tunnel** add-on creates a dynamic SSH tunnel (SOCKS proxy) to redirect traffic, with IP-based access filtering and flexible authentication (via RSA key or password). It automatically generates an SSH key pair if none exists and provides an option for debug logging.
 
-## Fonctionnalités
-- **Tunnel SSH dynamique (proxy SOCKS)** : redirige le trafic via SSH.
-- **Filtrage par IP** : seuls les clients dont l'IP figure dans la liste `allowed_ips` peuvent accéder au tunnel.
-- **Authentification flexible** : utilisation d'une clé RSA ou d'un mot de passe.
-- **Génération automatique de clé** : si le fichier de clé n'existe pas dans le dossier persistant `/data/ssh_keys`, une paire est générée en fonction des paramètres `key_algo`, `key_length` et `key_passphrase`.
-- **Mode Debug** : active des logs détaillés (`-vvv`) pour diagnostiquer les connexions SSH.
+## Features
+- **Dynamic SSH Tunnel (SOCKS Proxy):** Redirects traffic over an SSH tunnel.
+- **IP Filtering:** Only clients with IPs listed in `allowed_ips` can access the tunnel.
+- **Flexible Authentication:** Supports using an RSA key (automatically generated if missing) or a password.
+- **Automatic Key Generation:** If the file `/data/ssh_keys/id_tunnel` does not exist, a key pair is generated based on the configured options (`key_algo`, `key_length`, and `key_passphrase`). The public key is output in the logs so you can add it to the remote server’s `authorized_keys`.
+- **Debug Mode:** When enabled (via the `debug` option), detailed SSH logs (using `-vvv`) are provided for troubleshooting.
 
 ## Configuration (config.yaml)
-Les options configurables sont :
+The following options are available:
 
 - **allowed_ips** (`str`)  
-  Liste des adresses IP autorisées à accéder au tunnel (exemple : `"127.0.0.1"` ou `"192.168.8.126,192.168.8.100"`).
+  A comma-separated list of IP addresses allowed to access the tunnel (e.g., `"127.0.0.1"` or `"192.168.8.126,192.168.8.100"`).
 
 - **ssh_target** (`str`)  
-  Destination SSH au format `user@mydomain.com` (le serveur distant auquel se connecter).
+  The remote SSH destination in the format `user@mydomain.com` (the remote server to connect to).
 
 - **ssh_port** (`int`)  
-  Port SSH du serveur distant (par défaut 22).
+  The SSH port on the remote server (default is 22).
 
 - **ssh_password** (`password?`)  
-  Mot de passe SSH (laisser vide si utilisation de la clé RSA).
+  The SSH password (leave empty if using RSA key authentication).
 
 - **key_algo** (`list(dsa|ecdsa|ecdsa-sk|ed25519|ed25519-sk|rsa)`)  
-  Algorithme pour la génération de la clé (par défaut `"rsa"`).
+  The algorithm to use when generating the SSH key (default is `"rsa"`).
 
 - **key_length** (`int`)  
-  Longueur de la clé pour rsa, dsa ou ecdsa (par exemple `3072`).
+  The key length for RSA, DSA, or ECDSA (e.g., `3072`).
 
 - **key_passphrase** (`password?`)  
-  Passphrase pour protéger la clé SSH générée (laisser vide pour aucune passphrase).
+  The passphrase to protect the generated SSH key (leave empty for no passphrase).
 
 - **tunnel_listen_address** (`str`)  
-  Adresse d'écoute du tunnel à l'intérieur du container (souvent `"0.0.0.0"` pour écouter sur toutes les interfaces).
+  The address on which the tunnel listens inside the container (typically `"0.0.0.0"` to listen on all interfaces).
 
 - **debug** (`bool`)  
-  Active ou désactive les logs détaillés SSH (ajoute l'option `-vvv` lorsque `true`).
+  Enable detailed SSH logging (adds the `-vvv` flag when `true`).
 
-### Section Ports
-La section suivante dans **config.yaml** définit le mapping des ports :
+### Ports Section
+In your **config.yaml**, the ports section is defined as follows:
 
 ```yaml
 ports:
   80/tcp: 3001
 ports_description:
-  80/tcp: Tunnel Listen Port
+  80/tcp: "Tunnel Listen Port"
