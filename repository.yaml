@@ -1,5 +1,5 @@
 name: "ha ssh proxy tunnel"
-version: "2025.1.0"
+version: "2025.1.0-alpha"
 slug: "ha_ssh_proxy_tunnel"
 description: "Addon permettant d'ouvrir un tunnel SSH avec proxy SOCKS, de limiter l'accès par IP et de gérer l'authentification par mot de passe ou clé RSA."
 #arch:
