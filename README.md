@@ -1,6 +1,7 @@
 <!-- README.md -->
 # ha ssh proxy tunnel
 
+DO NOT USE. ADDON IN DEVELOPMENT 
 Addon pour Home Assistant permettant d'ouvrir un tunnel SSH servant de proxy SOCKS, avec limitation d'accès par IP et authentification configurable (mot de passe ou clé RSA).
 
 - **Tunnel SSH** : Proxy SOCKS sur l'adresse et le port définis.
