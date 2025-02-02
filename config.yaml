@@ -38,10 +38,11 @@ options:
     default: 3000
 
 schema:
-  allowed_ips: string
-  ssh_target: string
+  allowed_ips: str
+  ssh_target: str
   ssh_port: int
-  ssh_password: string
-  authorized_keys: list
-  tunnel_listen_address: string
+  ssh_password: password
+  authorized_keys: 
+    - str
+  tunnel_listen_address: str
   tunnel_listen_port: int
