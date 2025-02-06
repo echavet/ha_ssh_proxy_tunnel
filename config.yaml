@@ -24,6 +24,9 @@ map:
   - homeassistant_config:rw  
   - share:rw
   - ssl:rw
+
+host_network: true
+
 ports:
   80/tcp: 3001
 ports_description:
