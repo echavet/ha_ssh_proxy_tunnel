@@ -34,6 +34,7 @@ ports_description:
   
 options:
   allowed_ips: "127.0.0.1"
+  allowed_macs: ""
   ssh_target: "user@mydomain.com"
   ssh_port: 22
   ssh_password: ""    
@@ -47,6 +48,7 @@ options:
 
 schema:
   allowed_ips: str
+  allowed_macs: str
   ssh_target: str
   ssh_port: int
   ssh_password: password?
