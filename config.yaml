@@ -50,6 +50,7 @@ options:
   key_passphrase: ""
   ssh_debug: false
   iptable_debug: false
+  log_level: "debug"
   
 schema:
   allowed_ips: str
@@ -63,4 +64,5 @@ schema:
   tunnel_listen_address: str
   ssh_debug: bool
   iptable_debug: bool
+  log_level: str
   #tunnel_listen_port: int
