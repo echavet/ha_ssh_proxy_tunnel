@@ -133,13 +133,17 @@ for mac in "${MACS[@]}"; do
     iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
 done
 
+if bashio::config.true 'iptable_debug'; then
+    iptables -A INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
+fi
+
 # Bloque l'accès au port du tunnel pour toute autre IP
 iptables -A INPUT -p tcp --dport 80 -j DROP
 
 
 # Ajouter des logs selon iptable_debug
 if bashio::config.true 'iptable_debug'; then
-    iptables -I INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
+    #iptables -I INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
     while true; do
         dmesg -c | grep "TUNNEL:" | while IFS= read -r line; do
             bashio::log.debug "$line"
