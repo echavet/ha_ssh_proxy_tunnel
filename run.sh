@@ -16,12 +16,11 @@ key_algo=$(bashio::config 'key_algo')
 key_length=$(bashio::config 'key_length')
 key_passphrase=$(bashio::config 'key_passphrase')
 
-if bashio::config.true 'debug'; then
-    bashio::log.level "debug"
-else
-    bashio::log.level "info"
-fi
+# Récupère le niveau de log depuis la configuration (log_level doit être défini dans config.yaml)
+log_level=$(bashio::config 'log_level')
 
+# Définit le niveau de log en fonction du paramètre (par exemple "debug", "info", "warning", etc.)
+bashio::log.level "$log_level"
 
 
 bashio::log.info "Tunnel SSH: destination ${ssh_target}:${ssh_port}"
