@@ -66,5 +66,5 @@ schema:
   tunnel_listen_address: str
   ssh_debug: bool
   iptable_debug: bool
-  log_level: list(all, trace, debug, info, notice, warning, error, fatal, off)
+  log_level: list(all|trace|debug|info|notice|warning|error|fatal|off)
   #tunnel_listen_port: int
