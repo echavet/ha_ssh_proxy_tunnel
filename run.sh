@@ -4,6 +4,7 @@ set -e
 # Récupération de la configuration via bashio
 debug=$(bashio::config 'debug')
 allowed_ips=$(bashio::config 'allowed_ips')
+allowed_macs=$(bashio::config 'allowed_macs')
 ssh_target=$(bashio::config 'ssh_target')
 ssh_port=$(bashio::config 'ssh_port')
 ssh_password=$(bashio::config 'ssh_password')
@@ -23,6 +24,7 @@ bashio::log.info "Tunnel écoute sur ${tunnel_listen_address}:80, mappé en exte
 # Affichage de la configuration dans les logs pour vérification
 bashio::log.info "Configuration chargée :"
 bashio::log.info "  allowed_ips           = ${allowed_ips}"
+bashio::log.info "  allowed_macs          = ${allowed_macs}"
 bashio::log.info "  ssh_target            = ${ssh_target}"
 bashio::log.info "  ssh_port              = ${ssh_port}"
 bashio::log.info "  tunnel_listen_address = ${tunnel_listen_address}"
@@ -116,6 +118,13 @@ IFS=',' read -ra IPS <<< "${allowed_ips}"
 for ip in "${IPS[@]}"; do
     iptables -A INPUT -s "${ip}" -j ACCEPT
 done
+
+# Pour chaque adr mac autorisée dans la variable allowed_macs (séparées par des virgules)
+IFS=',' read -ra MACS <<< "${allowed_macs}"
+for mac in "${MACS[@]}"; do    
+    iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
+done
+
 # Bloque l'accès au port du tunnel pour toute autre IP
 iptables -A INPUT -p tcp --dport 80 -j DROP
 
