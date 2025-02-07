@@ -2,7 +2,8 @@
 set -e
 
 # Récupération de la configuration via bashio
-debug=$(bashio::config 'debug')
+ssh_debug=$(bashio::config 'ssh_debug')
+iptable_debug=$(bashio::config 'iptable_debug')
 allowed_ips=$(bashio::config 'allowed_ips')
 allowed_macs=$(bashio::config 'allowed_macs')
 ssh_target=$(bashio::config 'ssh_target')
@@ -83,12 +84,13 @@ fi
 # Définition des options SSH pour diagnostiquer les connexions
 ###############################################################################
 
-# Définir la variable verbose selon debug
-if bashio::config.true 'debug'; then
+# Définir la variable verbose selon ssh_debug
+if bashio::config.true 'ssh_debug'; then
     verbose="-vvv"
 else
     verbose=""
 fi
+
 
 # SSH_OPTIONS contient :
 # - ExitOnForwardFailure=yes : quitte si le tunnel ne peut être établi
@@ -127,6 +129,18 @@ done
 
 # Bloque l'accès au port du tunnel pour toute autre IP
 iptables -A INPUT -p tcp --dport 80 -j DROP
+
+
+# Ajouter des logs selon iptable_debug
+if bashio::config.true 'iptable_debug'; then
+    iptables -I INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
+    while true; do
+        dmesg -c | grep "TUNNEL:" | while IFS= read -r line; do
+            bashio::log.debug "$line"
+        done
+        sleep 1
+    done &
+fi
 
 ###############################################################################
 # Lancement du tunnel SSH en mode premier plan pour que s6 supervise le processus
