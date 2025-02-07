@@ -136,23 +136,9 @@ for mac in "${allowed_macs_array[@]}"; do
     iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
 done
 
-# Pour chaque IP autorisée dans la variable allowed_ips (séparées par des virgules)
-# IFS=',' read -ra IPS <<< "${allowed_ips}"
-# for ip in "${IPS[@]}"; do
-#    bashio::log.info " FW rule: adding ip: ${ip} as authorized"    
-#    iptables -A INPUT -s "${ip}" -j ACCEPT
-# done
-
-# Pour chaque adr mac autorisée dans la variable allowed_macs (séparées par des virgules)
-# IFS=',' read -ra MACS <<< "${allowed_macs}"
-# for mac in "${MACS[@]}"; do    
-#    bashio::log.info " FW rule: adding mac: ${mac} as authorized"    
-#    iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
-# done
-
 if bashio::config.true 'iptable_debug'; then
     # iptables -A INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
-    iptables -A INPUT -p tcp --dport 80 -m limit --limit 20/min --limit-burst 1 -j LOG --log-prefix "TUNNEL BLOCKED: " --log-level 4
+    iptables -A INPUT -p tcp --dport 80 -m limit --limit 1/s --limit-burst 3 -j LOG --log-prefix "TUNNEL BLOCKED: " --log-level 7
 fi
 
 # Bloque l'accès au port du tunnel pour toute autre IP
