@@ -121,19 +121,34 @@ iptables -F  # Réinitialise toutes les règles
 iptables -A INPUT -s 127.0.0.1 -j ACCEPT  # Autorise les connexions locales
 iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
 
-# Pour chaque IP autorisée dans la variable allowed_ips (séparées par des virgules)
-IFS=',' read -ra IPS <<< "${allowed_ips}"
-for ip in "${IPS[@]}"; do
-    bashio::log.info " FW rule: adding ip: ${ip} as authorized"    
+
+# Pour les IP autorisées
+allowed_ips_array=($(bashio::config 'allowed_ips'))
+for ip in "${allowed_ips_array[@]}"; do
+    bashio::log.info "FW rule: adding ip: ${ip} as authorized"
     iptables -A INPUT -s "${ip}" -j ACCEPT
 done
 
-# Pour chaque adr mac autorisée dans la variable allowed_macs (séparées par des virgules)
-IFS=',' read -ra MACS <<< "${allowed_macs}"
-for mac in "${MACS[@]}"; do    
-    bashio::log.info " FW rule: adding mac: ${mac} as authorized"    
+# Pour les MAC autorisées
+allowed_macs_array=($(bashio::config 'allowed_macs'))
+for mac in "${allowed_macs_array[@]}"; do
+    bashio::log.info "FW rule: adding mac: ${mac} as authorized"
     iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
 done
+
+# Pour chaque IP autorisée dans la variable allowed_ips (séparées par des virgules)
+# IFS=',' read -ra IPS <<< "${allowed_ips}"
+# for ip in "${IPS[@]}"; do
+#    bashio::log.info " FW rule: adding ip: ${ip} as authorized"    
+#    iptables -A INPUT -s "${ip}" -j ACCEPT
+# done
+
+# Pour chaque adr mac autorisée dans la variable allowed_macs (séparées par des virgules)
+# IFS=',' read -ra MACS <<< "${allowed_macs}"
+# for mac in "${MACS[@]}"; do    
+#    bashio::log.info " FW rule: adding mac: ${mac} as authorized"    
+#    iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
+# done
 
 if bashio::config.true 'iptable_debug'; then
     iptables -A INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
