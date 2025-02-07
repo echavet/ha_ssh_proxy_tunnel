@@ -119,7 +119,7 @@ bashio::log.info "SSH_OPTIONS: ${SSH_OPTIONS}"
 
 iptables -F  # Réinitialise toutes les règles
 iptables -A INPUT -s 127.0.0.1 -j ACCEPT  # Autorise les connexions locales
-iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
+# iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
 
 
 # Pour les IP autorisées
