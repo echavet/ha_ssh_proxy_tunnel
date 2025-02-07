@@ -152,7 +152,7 @@ done
 
 if bashio::config.true 'iptable_debug'; then
     # iptables -A INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
-    iptables -A INPUT -p tcp --dport 80 -m limit --limit 1/s --limit-burst 3 -j LOG --log-prefix "TUNNEL: " --log-level 4
+    iptables -A INPUT -p tcp --dport 80 -m limit --limit 20/min --limit-burst 1 -j LOG --log-prefix "TUNNEL BLOCKED: " --log-level 4
 fi
 
 # Bloque l'accès au port du tunnel pour toute autre IP
@@ -163,7 +163,7 @@ iptables -A INPUT -p tcp --dport 80 -j DROP
 if bashio::config.true 'iptable_debug'; then
     #iptables -I INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
     while true; do
-        dmesg -c | grep "TUNNEL:" | while IFS= read -r line; do
+        dmesg -c | grep "TUNNEL BLOCKED:" | while IFS= read -r line; do
             bashio::log.debug "$line"
         done
         sleep 1
