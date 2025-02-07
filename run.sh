@@ -16,6 +16,13 @@ key_algo=$(bashio::config 'key_algo')
 key_length=$(bashio::config 'key_length')
 key_passphrase=$(bashio::config 'key_passphrase')
 
+if bashio::config.true 'debug'; then
+    bashio::log.level "debug"
+else
+    bashio::log.level "info"
+fi
+
+
 
 bashio::log.info "Tunnel SSH: destination ${ssh_target}:${ssh_port}"
 bashio::log.info "Tunnel écoute sur ${tunnel_listen_address}:80, mappé en externe sur le port ${tunnel_listen_port}"
