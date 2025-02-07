@@ -30,8 +30,8 @@ bashio::log.info "Tunnel écoute sur ${tunnel_listen_address}:80, mappé en exte
 
 # Affichage de la configuration dans les logs pour vérification
 bashio::log.info "Configuration chargée :"
-bashio::log.info "  allowed_ips           = ${allowed_ips}"
-bashio::log.info "  allowed_macs          = ${allowed_macs}"
+#bashio::log.info "  allowed_ips           = ${allowed_ips}"
+#bashio::log.info "  allowed_macs          = ${allowed_macs}"
 bashio::log.info "  ssh_target            = ${ssh_target}"
 bashio::log.info "  ssh_port              = ${ssh_port}"
 bashio::log.info "  tunnel_listen_address = ${tunnel_listen_address}"
