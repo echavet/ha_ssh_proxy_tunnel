@@ -124,12 +124,14 @@ iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autori
 # Pour chaque IP autorisée dans la variable allowed_ips (séparées par des virgules)
 IFS=',' read -ra IPS <<< "${allowed_ips}"
 for ip in "${IPS[@]}"; do
+    bashio::log.info " FW rule: adding ip: ${ip} as authorized"    
     iptables -A INPUT -s "${ip}" -j ACCEPT
 done
 
 # Pour chaque adr mac autorisée dans la variable allowed_macs (séparées par des virgules)
 IFS=',' read -ra MACS <<< "${allowed_macs}"
 for mac in "${MACS[@]}"; do    
+    bashio::log.info " FW rule: adding mac: ${mac} as authorized"    
     iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
 done
 
