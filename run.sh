@@ -122,9 +122,10 @@ bashio::log.warning "ATTENTION: La commande 'iptables -F' a été supprimée pou
 
 # 1. Nettoyage de la chaîne dédiée (pour éviter la duplication des règles lors d'un redémarrage)
 # On tente de supprimer l'ancienne chaîne si elle existe, et toutes les références.
-iptables -D INPUT -p tcp --dport ${TUNNEL_PORT} -j ${TUNNEL_CHAIN} 2>/dev/null
-iptables -F ${TUNNEL_CHAIN} 2>/dev/null
-iptables -X ${TUNNEL_CHAIN} 2>/dev/null
+# Les '|| true' permettent d'ignorer les erreurs si les règles/chaînes n'existent pas encore (à cause de set -e)
+iptables -D INPUT -p tcp --dport ${TUNNEL_PORT} -j ${TUNNEL_CHAIN} 2>/dev/null || true
+iptables -F ${TUNNEL_CHAIN} 2>/dev/null || true
+iptables -X ${TUNNEL_CHAIN} 2>/dev/null || true
 
 # 2. Création de la chaîne dédiée pour le filtrage du tunnel
 iptables -N ${TUNNEL_CHAIN} || bashio::log.warning "La chaîne ${TUNNEL_CHAIN} existait déjà."
