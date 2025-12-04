@@ -110,39 +110,61 @@ bashio::log.info "SSH_OPTIONS: ${SSH_OPTIONS}"
 
 
 ###############################################################################
-# Application des règles iptables pour limiter l'accès au tunnel
+# Application des règles iptables pour limiter l'accès au tunnel (Version Corrigée)
 ###############################################################################
 
-# Ces commandes configurent le firewall du container pour n'autoriser que les IP définies dans allowed_ips
-# Attention : Dans un container Docker, l'environnement réseau est isolé.
-# Ici, on part du principe que les IP source des connexions autorisées sont celles qui parviennent au container.
+TUNNEL_CHAIN="HA_TUNNEL_INPUT"
+TUNNEL_PORT="80"
 
-iptables -F  # Réinitialise toutes les règles
-iptables -A INPUT -s 127.0.0.1 -j ACCEPT  # Autorise les connexions locales
-# iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT  # Autorise les connexions déjà établies
+bashio::log.info "Configuration des règles iptables pour le port ${TUNNEL_PORT} (Tunnel SOCKS)"
+bashio::log.warning "ATTENTION: La commande 'iptables -F' a été supprimée pour éviter de purger les règles systèmes du Home Assistant Host."
 
 
-# Pour les IP autorisées
+# 1. Nettoyage de la chaîne dédiée (pour éviter la duplication des règles lors d'un redémarrage)
+# On tente de supprimer l'ancienne chaîne si elle existe, et toutes les références.
+iptables -D INPUT -p tcp --dport ${TUNNEL_PORT} -j ${TUNNEL_CHAIN} 2>/dev/null
+iptables -F ${TUNNEL_CHAIN} 2>/dev/null
+iptables -X ${TUNNEL_CHAIN} 2>/dev/null
+
+# 2. Création de la chaîne dédiée pour le filtrage du tunnel
+iptables -N ${TUNNEL_CHAIN} || bashio::log.warning "La chaîne ${TUNNEL_CHAIN} existait déjà."
+iptables -F ${TUNNEL_CHAIN} # S'assurer qu'elle est vide avant de la remplir
+
+
+# 3. Ajout des règles d'ACCEPT dans la chaîne dédiée pour les IPs autorisées
 allowed_ips_array=($(bashio::config 'allowed_ips'))
 for ip in "${allowed_ips_array[@]}"; do
-    bashio::log.info "FW rule: adding ip: ${ip} as authorized"
-    iptables -A INPUT -s "${ip}" -j ACCEPT
+    bashio::log.info "Règle FW: ajout de l'IP autorisée ${ip} à la chaîne ${TUNNEL_CHAIN}"
+    iptables -A ${TUNNEL_CHAIN} -s "${ip}" -j ACCEPT
 done
 
-# Pour les MAC autorisées
+# 4. Ajout des règles d'ACCEPT pour les MACs autorisées
 allowed_macs_array=($(bashio::config 'allowed_macs'))
 for mac in "${allowed_macs_array[@]}"; do
-    bashio::log.info "FW rule: adding mac: ${mac} as authorized"
-    iptables -A INPUT -p tcp --dport 80 -m mac --mac-source "${mac}" -j ACCEPT
+    bashio::log.info "Règle FW: ajout de la MAC autorisée ${mac} à la chaîne ${TUNNEL_CHAIN}"
+    # L'implémentation originale utilisait -p tcp --dport 80, conservons cette granularité ici.
+    iptables -A ${TUNNEL_CHAIN} -m mac --mac-source "${mac}" -j ACCEPT
 done
 
+
+# 5. Ajout de la règle de débogage pour les paquets bloqués (si activé)
 if bashio::config.true 'iptable_debug'; then
-    # iptables -A INPUT -p tcp --dport 80 -j LOG --log-prefix "TUNNEL: " --log-level 4
-    iptables -A INPUT -p tcp --dport 80 -m limit --limit 1/s --limit-burst 3 -j LOG --log-prefix "TUNNEL BLOCKED: " --log-level 7
+    # Cette règle sera exécutée si le paquet n'a pas été ACCEPTé par les règles précédentes.
+    iptables -A ${TUNNEL_CHAIN} -m limit --limit 1/s --limit-burst 3 -j LOG --log-prefix "TUNNEL BLOCKED: " --log-level 7
 fi
 
-# Bloque l'accès au port du tunnel pour toute autre IP
-iptables -A INPUT -p tcp --dport 80 -j DROP
+
+# 6. Ajout de la règle finale de DROP dans la chaîne dédiée
+# Si aucune des règles ACCEPT précédentes n'a été déclenchée, le paquet est bloqué.
+iptables -A ${TUNNEL_CHAIN} -j DROP
+bashio::log.info "Règle FW: Bloque l'accès au port du tunnel pour toute autre source."
+
+
+# 7. Insertion du JUMP dans la chaîne INPUT principale du host
+# On insère cette règle au début de la chaîne INPUT pour que notre filtrage soit appliqué en priorité.
+# Cela renvoie le trafic destiné au port 80 vers notre chaîne personnalisée.
+iptables -I INPUT 1 -p tcp --dport ${TUNNEL_PORT} -j ${TUNNEL_CHAIN}
+bashio::log.info "Règle FW: Insertion du saut vers la chaîne ${TUNNEL_CHAIN} dans la chaîne INPUT pour le port ${TUNNEL_PORT}"
 
 
 # Ajouter des logs selon iptable_debug
